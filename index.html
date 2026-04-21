@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>امتحان إكسل التفاعلي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+        }
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: #e5e7eb;
+            transform: scale(1.02);
+        }
+        .option-btn.selected {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .option-btn.correct {
+            background-color: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        .option-btn.wrong {
+            background-color: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* تصميم شريط التقدم */
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-center items-center p-4">
+
+    <!-- الحاوية الرئيسية -->
+    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden relative flex flex-col h-full md:h-auto min-h-[500px]">
+        
+        <!-- الترويسة -->
+        <div class="bg-green-600 text-white p-6 text-center shadow-md z-10">
+            <h1 class="text-3xl font-bold mb-2">اختبار مهارات Excel الشامل</h1>
+            <p class="text-green-100 text-sm">40 سؤالاً لاختبار معرفتك بأساسيات ودوال الإكسل</p>
+        </div>
+
+        <!-- شريط التقدم -->
+        <div id="progress-container" class="w-full bg-gray-200 h-2 hidden">
+            <div id="progress-bar" class="bg-green-500 h-2 progress-bar" style="width: 0%;"></div>
+        </div>
+
+        <div class="flex-grow relative">
+            <!-- شاشة البداية -->
+            <div id="start-screen" class="p-8 text-center fade-in absolute inset-0 flex flex-col items-center justify-center">
+                <div class="text-7xl mb-6">📊</div>
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">مرحباً بك في التحدي!</h2>
+                <p class="text-gray-600 mb-8 max-w-md mx-auto">هذا الاختبار الشامل يتكون من 40 سؤالاً تغطي كل ما ذكر في ملفات الدورة من المفاهيم الأساسية، الأخطاء البرمجية، والدوال.</p>
+                <button onclick="startQuiz()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1 text-lg">
+                    ابدأ الاختبار الآن
+                </button>
+            </div>
+
+            <!-- شاشة الأسئلة -->
+            <div id="quiz-screen" class="p-6 md:p-8 hidden absolute inset-0 flex flex-col overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-sm font-semibold text-gray-500 bg-gray-100 py-1.5 px-4 rounded-full border border-gray-200">السؤال <span id="current-question-num" class="text-gray-800 font-bold">1</span> / <span id="total-questions">40</span></span>
+                    <span class="text-sm font-semibold text-green-700 bg-green-50 py-1.5 px-4 rounded-full border border-green-200">النقاط: <span id="score-display" class="font-bold">0</span></span>
+                </div>
+                
+                <h2 id="question-text" class="text-xl md:text-2xl font-bold text-gray-800 mb-6 leading-relaxed">
+                    نص السؤال يظهر هنا؟
+                </h2>
+
+                <div id="options-container" class="space-y-3 mb-6">
+                    <!-- الخيارات ستضاف هنا عن طريق الجافاسكريبت -->
+                </div>
+
+                <div class="mt-auto text-left hidden" id="next-btn-container">
+                    <button onclick="nextQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transition duration-300 flex items-center justify-center w-full md:w-auto md:ml-auto">
+                        <span>السؤال التالي</span>
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- شاشة النتيجة -->
+            <div id="result-screen" class="p-8 text-center hidden fade-in absolute inset-0 flex flex-col items-center justify-center overflow-y-auto">
+                <div class="text-6xl mb-4">🏆</div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">انتهى الاختبار!</h2>
+                <p class="text-gray-600 text-lg mb-6">لقد أكملت الإجابة على جميع الأسئلة الأربعين.</p>
+                
+                <div class="bg-gray-50 rounded-2xl p-8 mb-8 inline-block w-full max-w-sm border-2 border-gray-100 shadow-sm">
+                    <p class="text-sm text-gray-500 mb-2 font-medium">نتيجتك النهائية</p>
+                    <div class="text-5xl font-extrabold text-green-600 mb-4">
+                        <span id="final-score">0</span><span class="text-3xl text-gray-400">/40</span>
+                    </div>
+                    <p id="feedback-msg" class="text-gray-800 font-bold text-lg"></p>
+                </div>
+
+                <button onclick="restartQuiz()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 flex items-center">
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    إعادة الاختبار
+                </button>
+            </div>
+        </div>
+
+        <!-- التذييل والتوقيع الشخصي -->
+        <div class="bg-gray-50 p-4 text-center border-t border-gray-200 mt-auto z-10">
+            <p class="text-gray-600 text-sm font-bold tracking-wide">من إعداد قيس جازي &copy; 2026</p>
+        </div>
+
+    </div>
+
+    <script>
+        // بيانات 40 سؤال
+        const quizData = [
+            { question: "ما هو برنامج Excel؟", options: ["برنامج لمعالجة النصوص", "برنامج جداول بيانات لإجراء العمليات الحسابية", "برنامج لتصميم العروض التقديمية", "برنامج لإدارة قواعد البيانات المعقدة"], correct: 1 },
+            { question: "في أي عام تم إصدار النسخة الأولى من برنامج Excel؟", options: ["1980", "1985", "1990", "1995"], correct: 1 },
+            { question: "كيف يتم تسمية الأعمدة (Columns) في برنامج Excel؟", options: ["بالأرقام (1, 2, 3...)", "بالأحرف (A, B, C...)", "بالرموز الخاصة", "بالألوان"], correct: 1 },
+            { question: "كيف يتم تسمية الصفوف (Rows) في برنامج Excel؟", options: ["بالأحرف", "بالرموز", "بالأرقام", "بدون تسمية"], correct: 2 },
+            { question: "ما هي وظيفة مربع الاسم (Name Box)؟", options: ["حذف الخلايا المحددة", "إدراج معادلات رياضية جديدة", "معرفة اسم أو عنوان الخلية المحددة", "تغيير لون خلفية الخلية"], correct: 2 },
+            { question: "ماذا يوفر الشريط (Ribbon) للمستخدم؟", options: ["مساحة إضافية للكتابة", "اختصارات لأوامر الإكسل (Commands)", "ملفات مساعدة فقط", "قوالب جاهزة للطباعة"], correct: 1 },
+            { question: "ما هو تعريف علامات التبويب (Tabs) في واجهة البرنامج؟", options: ["مجموعة من الخلايا المدمجة", "أخطاء برمجية شائعة", "قائمة تحتوي على تقسيمات فرعية للوظائف", "دوال رياضية معقدة"], correct: 2 },
+            { question: "كيف يتم فصل المجموعات (Groups) عن بعضها داخل علامات التبويب؟", options: ["بخط عمودي رفيع", "بمسافة فارغة كبيرة", "بنجمة مخفية", "بلون خلفية مختلف"], correct: 0 },
+            { question: "ما هو المصطلح الذي يُطلق على الأزرار المستخدمة لتنفيذ الإجراءات؟", options: ["الأوراق (Sheets)", "الخلايا (Cells)", "الأوامر (Commands)", "الصفوف (Rows)"], correct: 2 },
+            { question: "مما تتكون الورقة (Sheet) في Excel؟", options: ["من نصوص وصور فقط", "مجموعة من الصفوف والأعمدة تكون الخلايا", "من معادلات جاهزة لا يمكن مسحها", "من ملفات PDF مدمجة"], correct: 1 },
+            { question: "عند إنشاء مصنف جديد، كم ورقة عمل (Sheet) تظهر بشكل افتراضي عادةً؟", options: ["ورقة واحدة", "3 أوراق", "5 أوراق", "10 أوراق"], correct: 0 },
+            { question: "ماذا يعني مصطلح (Syntax) في سياق الإكسل؟", options: ["برمجة واجهة المستخدم", "تنسيق ألوان الجدول", "حذف البيانات المكررة", "طريقة كتابة الصيغ أو الأوامر بشكل صحيح"], correct: 3 },
+            { question: "بأي علامة يجب أن تبدأ دائماً الصيغ (Formulas) الحسابية؟", options: ["+", "-", "=", "$"], correct: 2 },
+            { question: "ما هي الفائدة الأساسية لخاصية الملء (Fill)؟", options: ["تلوين الخلايا بالكامل", "نسخ البيانات أو إنشاء تسلسلات تلقائياً لتوفير الوقت", "مسح جميع محتويات الجدول", "قفل الخلايا بكلمة مرور"], correct: 1 },
+            { question: "أين تقع أيقونة الملء في الخلية المحددة؟", options: ["في الزاوية اليمنى السفلى", "في أعلى يسار الخلية", "في منتصف الخلية تماماً", "خارج حدود الجدول"], correct: 0 },
+            { question: "كيف يتغير شكل مؤشر الفأرة عند وضعه فوق أيقونة الملء؟", options: ["يصبح سهماً أسود كبيراً", "يصبح علامة تعجب", "يتحول إلى علامة زائد (+) رفيعة", "يتحول إلى شكل يد"], correct: 2 },
+            { question: "ماذا تسمى طريقة ملء الخلايا تلقائياً بالنمط عبر النقر مرتين على مربع الملء؟", options: ["الملء اليدوي", "الملء الذكي", "النقر المزدوج للملء (Double Click Fill)", "السحب والإفلات"], correct: 2 },
+            { question: "المراجع التي تتغير تلقائياً عند نسخ الصيغة لتتكيف مع الموقع الجديد تسمى:", options: ["مراجع مطلقة (Absolute)", "مراجع نسبية (Relative)", "مراجع دائرية", "مراجع ثابتة"], correct: 1 },
+            { question: "المراجع التي تبقى ثابتة ولا تتغير عند نسخ الصيغة تسمى:", options: ["مراجع مطلقة (Absolute)", "مراجع نسبية (Relative)", "مراجع عشوائية", "دوال منطقية"], correct: 0 },
+            { question: "ما هي العلامة المستخدمة لتمييز المرجع المطلق (لتثبيت الخلية مثل A$1$)؟", options: ["علامة النجمة (*)", "علامة المربع (#)", "علامة الدولار ($)", "علامة النسبة المئوية (%)"], correct: 2 },
+            { question: "ما هو الاسم الذي يطلق على الصيغ الجاهزة في البرنامج؟", options: ["تنسيقات (Formats)", "رسومات (Charts)", "دوال (Functions)", "أخطاء (Errors)"], correct: 2 },
+            { question: "عند تطبيق الدالة على نطاق من الخلايا، أين يوضع هذا النطاق؟", options: ["بين علامتي تنصيص \" \"", "داخل أقواس ( )", "بين أقواس مربعة [ ]", "بعد الدالة بمسافة فقط"], correct: 1 },
+            { question: "ما هي وظيفة دالة (AVERAGE)؟", options: ["جمع الأرقام", "حساب المتوسط الحسابي", "إيجاد أعلى قيمة", "عد الخلايا"], correct: 1 },
+            { question: "كيف تتعامل دالة (AVERAGE) مع الخلايا التي تحتوي على نصوص؟", options: ["تتجاهلها", "تستبدلها بصفر", "تعطي رسالة خطأ", "تدمجها مع الأرقام"], correct: 0 },
+            { question: "أي دالة تقوم بحساب عدد الخلايا التي تحتوي على أرقام فقط ضمن نطاق معين؟", options: ["COUNTA", "COUNTBLANK", "SUM", "COUNT"], correct: 3 },
+            { question: "إذا أردت عد خلايا تحتوي على أرقام ونصوص معاً، فأي دالة هي الأفضل؟", options: ["COUNT", "COUNTA", "MAX", "IF"], correct: 1 },
+            { question: "دالة (COUNTBLANK) تُستخدم لـ:", options: ["عد الخلايا الممتلئة", "عد الأرقام السالبة فقط", "عد الخلايا الفارغة في نطاق معين", "تفريغ الخلايا من محتواها"], correct: 2 },
+            { question: "دالة (SUM) تُستخدم لـ:", options: ["طرح الأرقام", "ضرب الخلايا المحددة", "جمع الأرقام ضمن نطاق معين", "قسمة الأرقام"], correct: 2 },
+            { question: "لإيجاد أعلى قيمة رقمية في نطاق معين، نستخدم دالة:", options: ["HIGH", "MAX", "TOP", "UP"], correct: 1 },
+            { question: "لإيجاد أقل قيمة رقمية في نطاق معين، نستخدم دالة:", options: ["MIN", "LOW", "SMALL", "DOWN"], correct: 0 },
+            { question: "هل تعمل دوال MAX و MIN على الخلايا التي تحتوي نصوص؟", options: ["نعم، تقرأ النصوص كأرقام", "لا، تتجاهل الخلايا التي تحتوي على نصوص", "نعم، وتحسب طول النص", "تعطي خطأ فوراً"], correct: 1 },
+            { question: "دالة (LOWER) تُستخدم من أجل:", options: ["مسح النص أسفل الخلية", "تحويل النصوص في الخلية إلى حروف صغيرة", "تصغير حجم الخط للمحتوى", "نقل البيانات للأسفل"], correct: 1 },
+            { question: "ما هي الدالة التي تُرجع قيمة معينة بناءً على ما إذا كان الشرط صحيحاً (TRUE) أو خطأ (FALSE)؟", options: ["VLOOKUP", "IF", "NPV", "SUM"], correct: 1 },
+            { question: "من كم جزء تتكون دالة IF؟", options: ["جزء واحد", "جزئين", "ثلاثة أجزاء", "أربعة أجزاء"], correct: 2 },
+            { question: "يشار إلى الشرط في دالة IF باسم:", options: ["value_if_true", "value_if_false", "logical_test", "condition_check"], correct: 2 },
+            { question: "دالة (NPV) تُستخدم لحساب:", options: ["الضريبة المضافة", "صافي القيمة الحالية للاستثمار", "الربح اليومي", "عدد الموظفين"], correct: 1 },
+            { question: "في دالة (NPV)، كيف يجب إدخال قيمة معدل الخصم (Rate)؟", options: ["ككسر عادي", "كنص مكتوب", "كرقم عشري فقط", "كنسبة مئوية (%)"], correct: 3 },
+            { question: "دالة (VLOOKUP) تتيح للمستخدم:", options: ["البحث أفقياً في الصفوف", "البحث عمودياً عن القيم داخل جدول", "دمج الجداول معاً", "تغيير اتجاه النص للعمودي"], correct: 1 },
+            { question: "ماذا يمثل الجزء (Col_index_num) في دالة VLOOKUP؟", options: ["رقم العمود الذي سيتم سحب البيانات منه", "القيمة المراد البحث عنها", "نطاق الجدول بأكمله", "نوع المطابقة (تقريبية أو تامة)"], correct: 0 },
+            { question: "متى يظهر خطأ (#DIV/0!) في برنامج الإكسل؟", options: ["عند استخدام دالة غير موجودة", "عند حذف خلية مرجعية", "عند محاولة قسمة رقم على صفر أو خلية فارغة", "عند إدخال نص بدلاً من رقم في معادلة جمع"], correct: 2 },
+            { question: "أي خطأ يظهر عندما يكون نوع البيانات غير صحيح للصيغة (مثل جمع نص مع رقم: \"Hello\"+5)؟", options: ["#REF!", "#NAME?", "#DIV/0!", "#VALUE!"], correct: 3 },
+            { question: "متى يظهر خطأ (#REF!)؟", options: ["عندما تكون الخلية المرجعية غير موجودة أو تم حذفها", "عندما تكتب اسم الدالة بشكل خاطئ", "عند قسمة رقم على صفر", "عند البحث عن قيمة غير موجودة"], correct: 0 },
+            { question: "إذا قمت بكتابة الدالة بشكل خاطئ (مثل SUMM بدلاً من SUM)، سيظهر خطأ:", options: ["#VALUE!", "#REF!", "#NAME?", "#N/A"], correct: 2 },
+            { question: "خطأ (#N/A) يظهر غالباً مع دوال البحث مثل VLOOKUP عندما:", options: ["لا يمكن العثور على القيمة المطلوبة", "يكون الجدول غير ملون", "يكون رقم العمود سالباً", "يتم مسح الخلية الهدف"], correct: 0 },
+            { question: "خطأ (#NUM!) يظهر عند:", options: ["حذف عمود بأكمله", "وجود مشكلة في الأرقام (مثل حساب الجذر التربيعي لرقم سالب)", "القسمة على صفر", "جمع نصوص مع بعضها"], correct: 1 }
+        ];
+
+        // اختيار 40 سؤال فقط لضمان العدد المطلوب (لدينا 45 في المصفوفة أعلاه)
+        // سنقوم بتقليصها لتصبح 40 سؤالاً كما طلب المستخدم ليكون دقيقاً
+        const finalQuizData = quizData.slice(0, 40);
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let hasAnswered = false;
+
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const currentQuestionNum = document.getElementById('current-question-num');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const scoreDisplay = document.getElementById('score-display');
+        const nextBtnContainer = document.getElementById('next-btn-container');
+        const finalScore = document.getElementById('final-score');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+
+        totalQuestionsElement.innerText = finalQuizData.length;
+
+        function startQuiz() {
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            progressContainer.classList.remove('hidden');
+            
+            quizScreen.classList.add('fade-in');
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScoreDisplay();
+            updateProgress();
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            hasAnswered = false;
+            nextBtnContainer.classList.add('hidden');
+            
+            const currentQ = finalQuizData[currentQuestionIndex];
+            currentQuestionNum.innerText = currentQuestionIndex + 1;
+            questionText.innerText = currentQ.question;
+            
+            optionsContainer.innerHTML = '';
+            
+            currentQ.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn w-full text-right p-4 border-2 border-gray-200 rounded-xl font-medium text-gray-700 focus:outline-none mb-3 hover:border-gray-300 bg-gray-50';
+                button.innerText = option;
+                button.onclick = () => selectOption(index, button);
+                optionsContainer.appendChild(button);
+            });
+            
+            quizScreen.classList.remove('fade-in');
+            void quizScreen.offsetWidth;
+            quizScreen.classList.add('fade-in');
+        }
+
+        function selectOption(selectedIndex, selectedBtn) {
+            if (hasAnswered) return;
+            hasAnswered = true;
+
+            const currentQ = finalQuizData[currentQuestionIndex];
+            const allButtons = optionsContainer.querySelectorAll('button');
+
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:border-gray-300', 'bg-gray-50');
+            });
+
+            if (selectedIndex === currentQ.correct) {
+                selectedBtn.classList.add('correct');
+                score++;
+                updateScoreDisplay();
+            } else {
+                selectedBtn.classList.add('wrong');
+                allButtons[currentQ.correct].classList.add('correct');
+            }
+
+            nextBtnContainer.classList.remove('hidden');
+            
+            // التمرير التلقائي لأسفل لرؤية زر "السؤال التالي" في الشاشات الصغيرة
+            setTimeout(() => {
+                nextBtnContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            updateProgress();
+            
+            if (currentQuestionIndex < finalQuizData.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function updateProgress() {
+            const progress = (currentQuestionIndex / finalQuizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function showResults() {
+            quizScreen.classList.add('hidden');
+            progressContainer.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            finalScore.innerText = score;
+            
+            let percentage = (score / finalQuizData.length) * 100;
+            if (percentage >= 90) {
+                feedbackMsg.innerText = "أسطورة! أنت خبير حقيقي في الإكسل 🌟";
+                feedbackMsg.className = "text-yellow-600 font-bold text-xl";
+            } else if (percentage >= 75) {
+                feedbackMsg.innerText = "أداء رائع جداً! معرفتك ممتازة 👍";
+                feedbackMsg.className = "text-green-600 font-bold text-xl";
+            } else if (percentage >= 50) {
+                feedbackMsg.innerText = "نجاح جيد، أتممت التحدي! 📚";
+                feedbackMsg.className = "text-blue-600 font-bold text-xl";
+            } else {
+                feedbackMsg.innerText = "تحتاج إلى المزيد من التدريب والمراجعة 💪";
+                feedbackMsg.className = "text-red-500 font-bold text-xl";
+            }
+        }
+
+        function restartQuiz() {
+            resultScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            progressBar.style.width = '0%';
+        }
+
+        function updateScoreDisplay() {
+            scoreDisplay.innerText = score;
+        }
+    </script>
+</body>
+</html>
